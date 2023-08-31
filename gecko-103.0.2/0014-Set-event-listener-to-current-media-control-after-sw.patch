@@ -1,0 +1,159 @@
+From d9728c68fc4c0da603b297c238b82f22a9dfc6fb Mon Sep 17 00:00:00 2001
+From: Felipe Erias <felipeerias@igalia.com>
+Date: Wed, 21 Jun 2023 14:09:56 +0900
+Subject: [PATCH 14/16] Set event listener to current media control after
+ switching process
+
+Backport of the upstream fix for bug 1827583, fixing media events in Youtube:
+
+  "youtube.com - Media playback not detected, breaking media notifications,
+  media controls, fullscreen landscape, background playback and PiP."
+  https://bugzilla.mozilla.org/show_bug.cgi?id=1827583
+
+According to the upstream description of the patch:
+
+  This issue is a timing issue of loading content via about:config etc.
+
+  Although `GeckoViewMediaControl` registers event listeners for
+  `MediaController` when enabling `MediaSessionDelegate`, if process
+  switching occurs, `browsingContenxt` and `MediaController` are re-created.
+
+  It means that we has to register newer `MediaController`.
+
+  To detect destroying current browser, I will add `onDestroyBrowser` to
+  `GeckoViewModule` again (This was removed by bug 1672262).
+
+  https://github.com/mozilla/gecko-dev/commit/7af39f7f34529c9ceea2e4ed48d2426dd0b0ba01
+---
+ mobile/android/chrome/geckoview/geckoview.js  |  3 ++
+ .../geckoview/test/MediaSessionTest.kt        | 27 +++++++++++++++
+ .../geckoview/GeckoViewMediaControl.jsm       | 34 ++++++++++++-------
+ .../modules/geckoview/GeckoViewModule.jsm     |  3 ++
+ 4 files changed, 54 insertions(+), 13 deletions(-)
+
+diff --git a/mobile/android/chrome/geckoview/geckoview.js b/mobile/android/chrome/geckoview/geckoview.js
+index a9942a236807..b48042043497 100644
+--- a/mobile/android/chrome/geckoview/geckoview.js
++++ b/mobile/android/chrome/geckoview/geckoview.js
+@@ -382,6 +382,9 @@ class ModuleInfo {
+    * Called before the browser is removed
+    */
+   onDestroyBrowser() {
++    if (this._impl) {
++      this._impl.onDestroyBrowser();
++    }
+     this._contentModuleLoaded = false;
+   }
+ 
+diff --git a/mobile/android/geckoview/src/androidTest/java/org/mozilla/geckoview/test/MediaSessionTest.kt b/mobile/android/geckoview/src/androidTest/java/org/mozilla/geckoview/test/MediaSessionTest.kt
+index c1a34689a7be..7a62c7a28c94 100644
+--- a/mobile/android/geckoview/src/androidTest/java/org/mozilla/geckoview/test/MediaSessionTest.kt
++++ b/mobile/android/geckoview/src/androidTest/java/org/mozilla/geckoview/test/MediaSessionTest.kt
+@@ -822,4 +822,31 @@ class MediaSessionTest : BaseSessionTest() {
+         mediaSession1!!.pause()
+         sessionRule.waitForResult(completedStep5)
+     }
++
++    @Test
++    fun switchingProcess() {
++        // TODO: bug 1810736
++        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
++        sessionRule.setPrefsUntilTestEnd(
++            mapOf(
++                "media.autoplay.default" to 0,
++            ),
++        )
++        mainSession.loadUri("about:blank")
++        sessionRule.waitForPageStop()
++        mainSession.loadTestPath(VIDEO_WEBM_PATH)
++        sessionRule.waitForPageStop()
++        val onPlayCalled = GeckoResult<Void>()
++        mainSession.delegateUntilTestEnd(object : MediaSession.Delegate {
++            @AssertCalled(count = 1)
++            override fun onPlay(
++                session: GeckoSession,
++                mediaSession: MediaSession,
++            ) {
++                onPlayCalled.complete(null)
++            }
++        })
++        mainSession.evaluateJS("document.querySelector('video').play()")
++        sessionRule.waitForResult(onPlayCalled)
++    }
+ }
+diff --git a/mobile/android/modules/geckoview/GeckoViewMediaControl.jsm b/mobile/android/modules/geckoview/GeckoViewMediaControl.jsm
+index 78955ef7c6ce..6920410cda82 100644
+--- a/mobile/android/modules/geckoview/GeckoViewMediaControl.jsm
++++ b/mobile/android/modules/geckoview/GeckoViewMediaControl.jsm
+@@ -15,12 +15,8 @@ class GeckoViewMediaControl extends GeckoViewModule {
+     debug`onInit`;
+   }
+ 
+-  onEnable() {
+-    debug`onEnable`;
+-
+-    if (this.controller.isActive) {
+-      this.handleActivated();
+-    }
++  onInitBrowser() {
++    debug`onInitBrowser`;
+ 
+     const options = {
+       mozSystemGroup: true,
+@@ -33,6 +29,25 @@ class GeckoViewMediaControl extends GeckoViewModule {
+     this.controller.addEventListener("positionstatechange", this, options);
+     this.controller.addEventListener("metadatachange", this, options);
+     this.controller.addEventListener("playbackstatechange", this, options);
++  }
++
++  onDestroyBrowser() {
++    debug`onDestroyBrowser`;
++
++    this.controller.removeEventListener("activated", this);
++    this.controller.removeEventListener("deactivated", this);
++    this.controller.removeEventListener("supportedkeyschange", this);
++    this.controller.removeEventListener("positionstatechange", this);
++    this.controller.removeEventListener("metadatachange", this);
++    this.controller.removeEventListener("playbackstatechange", this);
++  }
++
++  onEnable() {
++    debug`onEnable`;
++
++    if (this.controller.isActive) {
++      this.handleActivated();
++    }
+ 
+     this.registerListener([
+       "GeckoView:MediaSession:Play",
+@@ -51,13 +66,6 @@ class GeckoViewMediaControl extends GeckoViewModule {
+   onDisable() {
+     debug`onDisable`;
+ 
+-    this.controller.removeEventListener("activated", this);
+-    this.controller.removeEventListener("deactivated", this);
+-    this.controller.removeEventListener("supportedkeyschange", this);
+-    this.controller.removeEventListener("positionstatechange", this);
+-    this.controller.removeEventListener("metadatachange", this);
+-    this.controller.removeEventListener("playbackstatechange", this);
+-
+     this.unregisterListener();
+   }
+ 
+diff --git a/mobile/android/modules/geckoview/GeckoViewModule.jsm b/mobile/android/modules/geckoview/GeckoViewModule.jsm
+index c74fd3946337..29f67d5e731d 100644
+--- a/mobile/android/modules/geckoview/GeckoViewModule.jsm
++++ b/mobile/android/modules/geckoview/GeckoViewModule.jsm
+@@ -66,6 +66,9 @@ class GeckoViewModule {
+   // Override to initialize the browser before it is bound to the window.
+   onInitBrowser() {}
+ 
++  // Override to cleanup when the browser is destroyed.
++  onDestroyBrowser() {}
++
+   // Override to initialize module.
+   onInit() {}
+ 
+-- 
+2.35.1
+

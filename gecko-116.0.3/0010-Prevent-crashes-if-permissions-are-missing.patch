@@ -1,0 +1,106 @@
+From e358fc707c0e29c17207484a85027c44c8628a94 Mon Sep 17 00:00:00 2001
+From: Felipe Erias <felipeerias@igalia.com>
+Date: Thu, 9 Feb 2023 23:13:02 +0900
+Subject: [PATCH 11/16] Prevent crashes if permissions are missing
+
+This PR prevents crashes if the permissions WAKE_LOCK and FOREGROUND_SERVICE
+have not been granted to the app that is embedding GeckoView.
+---
+ .../google/android/exoplayer2/WakeLockManager.java | 11 +++++++++--
+ .../com/google/android/exoplayer2/util/Util.java   | 14 ++++++++++----
+ .../main/java/org/mozilla/gecko/GeckoAppShell.java |  7 +++++++
+ 3 files changed, 26 insertions(+), 6 deletions(-)
+
+diff --git a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java
+index 368eb8aa0d85..90bfaffba6f7 100644
+--- a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java
++++ b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java
+@@ -15,10 +15,13 @@
+  */
+ package org.mozilla.thirdparty.com.google.android.exoplayer2;
+ 
++import android.Manifest;
+ import android.annotation.SuppressLint;
+ import android.content.Context;
++import android.content.pm.PackageManager;
+ import android.os.PowerManager;
+ import android.os.PowerManager.WakeLock;
++import android.os.Process;
+ import androidx.annotation.Nullable;
+ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
+ 
+@@ -39,8 +42,12 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
+   private boolean stayAwake;
+ 
+   public WakeLockManager(Context context) {
+-    powerManager =
+-        (PowerManager) context.getApplicationContext().getSystemService(Context.POWER_SERVICE);
++    // Prevent a crash if the {@link android.Manifest.permission#WAKE_LOCK} permission has not been granted.
++    if (context.checkPermission(Manifest.permission.WAKE_LOCK, Process.myPid(), Process.myUid()) == PackageManager.PERMISSION_GRANTED) {
++      powerManager = (PowerManager) context.getApplicationContext().getSystemService(Context.POWER_SERVICE);
++    } else {
++      powerManager = null;
++    }
+   }
+ 
+   /**
+diff --git a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java
+index 4d7d8014dd56..456d1d04d68a 100644
+--- a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java
++++ b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java
+@@ -168,10 +168,16 @@ public final class Util {
+    */
+   @Nullable
+   public static ComponentName startForegroundService(Context context, Intent intent) {
+-    if (Util.SDK_INT >= 26) {
+-      return context.startForegroundService(intent);
+-    } else {
+-      return context.startService(intent);
++    // Prevent a crash if the {@link android.Manifest.permission#FOREGROUND_SERVICE} permission has not been granted.
++    try {
++      if (Util.SDK_INT >= 26) {
++        return context.startForegroundService(intent);
++      } else {
++        return context.startService(intent);
++      }
++    } catch (Exception e) {
++      Log.e(TAG, "Error when staring foreground service: " + e.getMessage());
++      return null;
+     }
+   }
+ 
+diff --git a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java
+index aae1f63c5f9c..c5c00dcb2eb0 100644
+--- a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java
++++ b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java
+@@ -5,6 +5,7 @@
+ 
+ package org.mozilla.gecko;
+ 
++import android.Manifest;
+ import android.annotation.SuppressLint;
+ import android.annotation.TargetApi;
+ import android.app.ActivityManager;
+@@ -43,6 +44,7 @@ import android.os.Bundle;
+ import android.os.LocaleList;
+ import android.os.Looper;
+ import android.os.PowerManager;
++import android.os.Process;
+ import android.os.Vibrator;
+ import android.provider.Settings;
+ import android.text.TextUtils;
+@@ -549,6 +551,11 @@ public class GeckoAppShell {
+   @SuppressLint("Wakelock") // We keep the wake lock independent from the function
+   // scope, so we need to suppress the linter warning.
+   private static void setWakeLockState(final String lock, final int state) {
++    // Prevent a crash if the {@link android.Manifest.permission#WAKE_LOCK} permission has not been granted.
++    if (getApplicationContext().checkPermission(Manifest.permission.WAKE_LOCK, Process.myPid(), Process.myUid()) != PackageManager.PERMISSION_GRANTED) {
++      return;
++    }
++
+     if (sWakeLocks == null) {
+       sWakeLocks = new SimpleArrayMap<>(WAKE_LOCKS_COUNT);
+     }
+-- 
+2.35.1
+

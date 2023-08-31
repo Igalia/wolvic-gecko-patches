@@ -1,0 +1,104 @@
+From 4bb7c09ce6228e3751b8430bb616661b9fccd781 Mon Sep 17 00:00:00 2001
+From: Felipe Erias <felipeerias@igalia.com>
+Date: Fri, 28 Jul 2023 13:28:22 +0200
+Subject: [PATCH 16/16] Replace deprecated getDhcpInfo()
+
+Replace a call to WifiManager.getDhcpInfo(), which is deprecated,
+by using the ConnectivityManager instead.
+---
+ .../mozilla/gecko/GeckoNetworkManager.java    | 50 ++++++++++++-------
+ 1 file changed, 31 insertions(+), 19 deletions(-)
+
+diff --git a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoNetworkManager.java b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoNetworkManager.java
+index 02ed848f6bca..cba124f0e9f5 100644
+--- a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoNetworkManager.java
++++ b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoNetworkManager.java
+@@ -5,23 +5,28 @@
+ 
+ package org.mozilla.gecko;
+ 
+-import android.annotation.SuppressLint;
+ import android.content.BroadcastReceiver;
+ import android.content.Context;
+ import android.content.Intent;
+ import android.content.IntentFilter;
+ import android.net.ConnectivityManager;
+-import android.net.DhcpInfo;
+-import android.net.wifi.WifiManager;
++import android.net.Network;
++import android.net.RouteInfo;
++import android.os.Build;
+ import android.util.Log;
++
+ import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
++
+ import org.mozilla.gecko.annotation.WrapForJNI;
+ import org.mozilla.gecko.util.NetworkUtils;
+ import org.mozilla.gecko.util.NetworkUtils.ConnectionSubType;
+ import org.mozilla.gecko.util.NetworkUtils.ConnectionType;
+ import org.mozilla.gecko.util.NetworkUtils.NetworkStatus;
+ 
++import java.net.Inet4Address;
++import java.util.List;
++
+ /**
+  * Provides connection type, subtype and general network status (up/down).
+  *
+@@ -384,30 +389,37 @@ public class GeckoNetworkManager extends BroadcastReceiver {
+   }
+ 
+   private static int wifiDhcpGatewayAddress(final Context context) {
+-    if (context == null) {
++    if (context == null || Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+       return 0;
+     }
+ 
+     try {
+-      final WifiManager mgr =
+-          (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+-      if (mgr == null) {
+-        return 0;
+-      }
++      ConnectivityManager connectivityManager =
++              (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+ 
+-      @SuppressLint("MissingPermission")
+-      final DhcpInfo d = mgr.getDhcpInfo();
+-      if (d == null) {
++      Network activeNetwork = connectivityManager.getActiveNetwork();
++      if (activeNetwork == null) {
+         return 0;
+       }
++      List<RouteInfo> routes = connectivityManager.getLinkProperties(activeNetwork).getRoutes();
++      for (RouteInfo route : routes) {
++        if (route.isDefaultRoute() && route.getGateway() instanceof Inet4Address) {
++          return ipv4ToInt((Inet4Address) route.getGateway());
++        }
++      }
++    } catch (Exception e) {
++      Log.w(LOGTAG, "wifiDhcpGatewayAddress: " + e.getMessage());
++    }
++    return 0;
++  }
+ 
+-      return d.gateway;
+-
+-    } catch (final Exception ex) {
+-      // getDhcpInfo() is not documented to require any permissions, but on some devices
+-      // requires android.permission.ACCESS_WIFI_STATE. Just catch the generic exception
+-      // here and returning 0. Not logging because this could be noisy.
+-      return 0;
++  private static int ipv4ToInt(Inet4Address ipAddress) {
++    byte[] ipAddressBytes = ipAddress.getAddress();
++    int result = 0;
++    for (byte octet : ipAddressBytes) {
++      // Shift the result 8 bits to the left and add the current octet
++      result = (result << 8) | (octet & 0xFF);
+     }
++    return result;
+   }
+ }
+-- 
+2.35.1
+

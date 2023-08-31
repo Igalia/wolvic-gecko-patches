@@ -1,0 +1,1 @@
+You should download the [firefox-116.0.3.source.tar.xz](https://ftp.mozilla.org/pub/firefox/releases/116.0.3/source/firefox-116.0.3.source.tar.xz) file from Mozilla's [public repository for releases](https://ftp.mozilla.org/pub/firefox/releases/).

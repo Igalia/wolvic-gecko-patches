@@ -1,0 +1,105 @@
+From 91d417a3385b2ee171594d363e07771def98666e Mon Sep 17 00:00:00 2001
+From: Imanol Fernandez <ifernandez@igalia.com>
+Date: Wed, 26 Jan 2022 11:00:57 +0100
+Subject: [PATCH 01/16] Implement missing framerate methods in the WebXR spec
+
+---
+ dom/vr/XRSession.cpp    | 31 +++++++++++++++++++++++++++++++
+ dom/vr/XRSession.h      |  3 +++
+ dom/webidl/WebXR.webidl |  4 ++++
+ 3 files changed, 38 insertions(+)
+
+diff --git a/dom/vr/XRSession.cpp b/dom/vr/XRSession.cpp
+index 081b8bcd9517..6a75c7e16684 100644
+--- a/dom/vr/XRSession.cpp
++++ b/dom/vr/XRSession.cpp
+@@ -231,6 +231,14 @@ XRRenderState* XRSession::RenderState() { return mActiveRenderState; }
+ 
+ XRInputSourceArray* XRSession::InputSources() { return mInputSources; }
+ 
++Nullable<float> XRSession::GetFrameRate() {
++  return {};
++}
++
++void XRSession::GetSupportedFrameRates(JSContext*, JS::MutableHandle<JSObject*> aRetVal) {
++  aRetVal.set(nullptr);
++}
++
+ // https://immersive-web.github.io/webxr/#apply-the-pending-render-state
+ void XRSession::ApplyPendingRenderState() {
+   if (mPendingRenderState == nullptr) {
+@@ -393,6 +401,29 @@ already_AddRefed<Promise> XRSession::RequestReferenceSpace(
+   return promise.forget();
+ }
+ 
++already_AddRefed<Promise> XRSession::UpdateTargetFrameRate(float aRate, ErrorResult& aRv) {
++  nsCOMPtr<nsIGlobalObject> global = GetParentObject();
++  NS_ENSURE_TRUE(global, nullptr);
++
++  RefPtr<Promise> promise = Promise::Create(global, aRv);
++  NS_ENSURE_TRUE(!aRv.Failed(), nullptr);
++
++  if (mEnded) {
++    promise->MaybeRejectWithInvalidStateError(
++        "UpdateTargetFrameRate can not be called on an XRSession that has ended.");
++    return promise.forget();
++  }
++
++  // https://immersive-web.github.io/webxr/#dom-xrsession-updatetargetframerate
++  // TODO: Validate the rate with the frame rates supported from the device.
++  // We add a no op for now to avoid JS exceptions related to undefined method.
++  // The spec states that user agent MAY use rate to calculate a new display frame rate,
++  // so it's fine to let the default frame rate for now.
++
++  promise->MaybeResolve(JS::UndefinedHandleValue);
++  return promise.forget();
++}
++
+ XRRenderState* XRSession::GetActiveRenderState() const {
+   return mActiveRenderState;
+ }
+diff --git a/dom/vr/XRSession.h b/dom/vr/XRSession.h
+index 7df8046be407..1ec9c35e5cb5 100644
+--- a/dom/vr/XRSession.h
++++ b/dom/vr/XRSession.h
+@@ -67,6 +67,8 @@ class XRSession final : public DOMEventTargetHelper, public nsARefreshObserver {
+   XRVisibilityState VisibilityState() const;
+   XRRenderState* RenderState();
+   XRInputSourceArray* InputSources();
++  Nullable<float> GetFrameRate();
++  void GetSupportedFrameRates(JSContext* aJSContext, JS::MutableHandle<JSObject*> aRetval);
+ 
+   // WebIDL Methods
+   void UpdateRenderState(const XRRenderStateInit& aNewState, ErrorResult& aRv);
+@@ -76,6 +78,7 @@ class XRSession final : public DOMEventTargetHelper, public nsARefreshObserver {
+                                 mozilla::ErrorResult& aError);
+   void CancelAnimationFrame(int32_t aHandle, mozilla::ErrorResult& aError);
+   already_AddRefed<Promise> End(ErrorResult& aRv);
++  already_AddRefed<Promise> UpdateTargetFrameRate(float aRate, ErrorResult& aRv);
+ 
+   // WebIDL Events
+   IMPL_EVENT_HANDLER(end);
+diff --git a/dom/webidl/WebXR.webidl b/dom/webidl/WebXR.webidl
+index f1f893b437d8..9437e30d1d58 100644
+--- a/dom/webidl/WebXR.webidl
++++ b/dom/webidl/WebXR.webidl
+@@ -43,12 +43,16 @@ interface XRSession : EventTarget {
+   readonly attribute XRVisibilityState visibilityState;
+   [SameObject] readonly attribute XRRenderState renderState;
+   [SameObject] readonly attribute XRInputSourceArray inputSources;
++  readonly attribute float? frameRate;
++  readonly attribute Float32Array? supportedFrameRates;
+ 
+   // Methods
+   [Throws]
+   void updateRenderState(optional XRRenderStateInit state = {});
+   [NewObject]
+   Promise<XRReferenceSpace> requestReferenceSpace(XRReferenceSpaceType type);
++  [NewObject]
++  Promise<void> updateTargetFrameRate(float rate);
+ 
+   [Throws]
+   long requestAnimationFrame(XRFrameRequestCallback callback);
+-- 
+2.35.1
+
