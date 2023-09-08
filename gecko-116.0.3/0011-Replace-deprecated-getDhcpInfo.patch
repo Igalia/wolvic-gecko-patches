@@ -1,16 +1,5 @@
-From 4bb7c09ce6228e3751b8430bb616661b9fccd781 Mon Sep 17 00:00:00 2001
-From: Felipe Erias <felipeerias@igalia.com>
-Date: Fri, 28 Jul 2023 13:28:22 +0200
-Subject: [PATCH 16/16] Replace deprecated getDhcpInfo()
-
-Replace a call to WifiManager.getDhcpInfo(), which is deprecated,
-by using the ConnectivityManager instead.
----
- .../mozilla/gecko/GeckoNetworkManager.java    | 50 ++++++++++++-------
- 1 file changed, 31 insertions(+), 19 deletions(-)
-
 diff --git a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoNetworkManager.java b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoNetworkManager.java
-index 02ed848f6bca..cba124f0e9f5 100644
+index 02ed848f6b..cba124f0e9 100644
 --- a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoNetworkManager.java
 +++ b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoNetworkManager.java
 @@ -5,23 +5,28 @@
@@ -100,5 +89,5 @@ index 02ed848f6bca..cba124f0e9f5 100644
    }
  }
 -- 
-2.35.1
+2.40.1
 

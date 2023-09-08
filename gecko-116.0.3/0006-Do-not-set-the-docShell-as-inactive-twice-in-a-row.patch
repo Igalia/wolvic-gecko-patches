@@ -1,19 +1,8 @@
-From d40f1b433b341ad027a23ce65f6b75dfb95a0e0f Mon Sep 17 00:00:00 2001
-From: Sergio Villar Senin <svillar@igalia.com>
-Date: Fri, 3 Jun 2022 12:59:49 +0200
-Subject: [PATCH 07/16] Do not set the docShell as inactive twice in a row
-
-Consecutive calls to setActive(false) were causing audio/video to stall
-when playing a YouTube video in a window while closing another one.
----
- mobile/android/modules/geckoview/GeckoViewContent.jsm | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/mobile/android/modules/geckoview/GeckoViewContent.jsm b/mobile/android/modules/geckoview/GeckoViewContent.jsm
-index 00f0cb7d44ea..e4594c523e83 100644
---- a/mobile/android/modules/geckoview/GeckoViewContent.jsm
-+++ b/mobile/android/modules/geckoview/GeckoViewContent.jsm
-@@ -148,7 +148,8 @@ class GeckoViewContent extends GeckoViewModule {
+diff --git a/mobile/android/modules/geckoview/GeckoViewContent.sys.mjs b/mobile/android/modules/geckoview/GeckoViewContent.sys.mjs
+index 94494af2ae..fc385a8143 100644
+--- a/mobile/android/modules/geckoview/GeckoViewContent.sys.mjs
++++ b/mobile/android/modules/geckoview/GeckoViewContent.sys.mjs
+@@ -159,7 +159,8 @@ export class GeckoViewContent extends GeckoViewModule {
          this.sendToAllChildren(aEvent, aData);
          break;
        case "GeckoView:SetActive":
@@ -24,5 +13,5 @@ index 00f0cb7d44ea..e4594c523e83 100644
        case "GeckoView:SetFocused":
          if (aData.focused) {
 -- 
-2.35.1
+2.40.1
 

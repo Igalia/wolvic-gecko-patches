@@ -1,15 +1,5 @@
-From 093beeaf02e16e0cfb8181f793051acdb4326efe Mon Sep 17 00:00:00 2001
-From: Imanol Fernandez <ifernandez@igalia.com>
-Date: Wed, 9 Feb 2022 19:33:36 +0100
-Subject: [PATCH 05/16] Invert the matrix multiplication order in
- BoundedReferenceSpace too
-
----
- dom/vr/XRBoundedReferenceSpace.cpp | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
 diff --git a/dom/vr/XRBoundedReferenceSpace.cpp b/dom/vr/XRBoundedReferenceSpace.cpp
-index 200a2539f86e..d1a37fa58fd5 100644
+index 200a2539f8..d1a37fa58f 100644
 --- a/dom/vr/XRBoundedReferenceSpace.cpp
 +++ b/dom/vr/XRBoundedReferenceSpace.cpp
 @@ -57,7 +57,7 @@ XRBoundedReferenceSpace::GetOffsetReferenceSpace(
@@ -22,5 +12,5 @@ index 200a2539f86e..d1a37fa58fd5 100644
    return offsetReferenceSpace.forget();
  }
 -- 
-2.35.1
+2.40.1
 

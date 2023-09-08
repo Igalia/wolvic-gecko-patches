@@ -1,20 +1,5 @@
-From e2d25e684e612158896ca6b0d418256aa7005b4a Mon Sep 17 00:00:00 2001
-From: Imanol Fernandez <ifernandez@igalia.com>
-Date: Wed, 16 Mar 2022 17:12:42 +0100
-Subject: [PATCH 06/16] Use eye transform instead of translation in external_vr
-
----
- dom/vr/VRServiceTest.cpp              | 36 +++++++++------------------
- dom/vr/XRFrame.cpp                    | 17 ++++---------
- dom/vr/XRView.cpp                     | 13 ++++------
- dom/vr/XRView.h                       |  6 ++---
- gfx/vr/external_api/moz_external_vr.h |  4 +--
- gfx/vr/gfxVR.cpp                      | 14 ++++++++---
- gfx/vr/gfxVR.h                        |  1 +
- 7 files changed, 38 insertions(+), 53 deletions(-)
-
 diff --git a/dom/vr/VRServiceTest.cpp b/dom/vr/VRServiceTest.cpp
-index 06720328c2cb..ed132e191338 100644
+index 06720328c2..ed132e1913 100644
 --- a/dom/vr/VRServiceTest.cpp
 +++ b/dom/vr/VRServiceTest.cpp
 @@ -95,10 +95,15 @@ void VRMockDisplay::Create() {
@@ -77,7 +62,7 @@ index 06720328c2cb..ed132e191338 100644
  
  bool VRMockDisplay::CapPosition() const {
 diff --git a/dom/vr/XRFrame.cpp b/dom/vr/XRFrame.cpp
-index 95f3028e17c0..2f57aa19e643 100644
+index 1561d36eb0..1e41a72500 100644
 --- a/dom/vr/XRFrame.cpp
 +++ b/dom/vr/XRFrame.cpp
 @@ -11,6 +11,7 @@
@@ -88,7 +73,7 @@ index 95f3028e17c0..2f57aa19e643 100644
  
  namespace mozilla::dom {
  
-@@ -88,20 +89,13 @@ already_AddRefed<XRViewerPose> XRFrame::GetViewerPose(
+@@ -86,20 +87,13 @@ already_AddRefed<XRViewerPose> XRFrame::GetViewerPose(
      viewerPose = mSession->PooledViewerPose(headTransform, emulatedPosition);
  
      auto updateEye = [&](int32_t viewIndex, gfx::VRDisplayState::Eye eye) {
@@ -112,7 +97,7 @@ index 95f3028e17c0..2f57aa19e643 100644
      };
  
      updateEye(0, gfx::VRDisplayState::Eye_Left);
-@@ -120,8 +114,7 @@ already_AddRefed<XRViewerPose> XRFrame::GetViewerPose(
+@@ -118,8 +112,7 @@ already_AddRefed<XRViewerPose> XRFrame::GetViewerPose(
  
      viewerPose =
          mSession->PooledViewerPose(gfx::Matrix4x4Double(), emulatedPosition);
@@ -123,10 +108,10 @@ index 95f3028e17c0..2f57aa19e643 100644
  
    return viewerPose.forget();
 diff --git a/dom/vr/XRView.cpp b/dom/vr/XRView.cpp
-index 93ec84f88cdf..76aadf34385c 100644
+index 07c3b81c9f..0e7e5c962d 100644
 --- a/dom/vr/XRView.cpp
 +++ b/dom/vr/XRView.cpp
-@@ -23,8 +23,7 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(XRView, Release)
+@@ -20,8 +20,7 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WITH_JS_MEMBERS(XRView,
  XRView::XRView(nsISupports* aParent, const XREye& aEye)
      : mParent(aParent),
        mEye(aEye),
@@ -136,7 +121,7 @@ index 93ec84f88cdf..76aadf34385c 100644
        mJSProjectionMatrix(nullptr) {
    mozilla::HoldJSObjects(this);
  }
-@@ -36,14 +35,12 @@ JSObject* XRView::WrapObject(JSContext* aCx,
+@@ -33,14 +32,12 @@ JSObject* XRView::WrapObject(JSContext* aCx,
    return XRView_Binding::Wrap(aCx, this, aGivenProto);
  }
  
@@ -154,7 +139,7 @@ index 93ec84f88cdf..76aadf34385c 100644
    }
    if (aProjectionMatrix != mProjectionMatrix) {
      mProjectionNeedsUpdate = true;
-@@ -74,7 +71,7 @@ void XRView::GetProjectionMatrix(JSContext* aCx,
+@@ -71,7 +68,7 @@ void XRView::GetProjectionMatrix(JSContext* aCx,
  
  already_AddRefed<XRRigidTransform> XRView::GetTransform(ErrorResult& aRv) {
    if (!mTransform) {
@@ -164,7 +149,7 @@ index 93ec84f88cdf..76aadf34385c 100644
    RefPtr<XRRigidTransform> transform = mTransform;
    return transform.forget();
 diff --git a/dom/vr/XRView.h b/dom/vr/XRView.h
-index 157e48902265..5afe0b061732 100644
+index 157e489022..5afe0b0617 100644
 --- a/dom/vr/XRView.h
 +++ b/dom/vr/XRView.h
 @@ -24,8 +24,7 @@ class XRView final : public nsWrapperCache {
@@ -188,7 +173,7 @@ index 157e48902265..5afe0b061732 100644
    JS::Heap<JSObject*> mJSProjectionMatrix;
    bool mProjectionNeedsUpdate = true;
 diff --git a/gfx/vr/external_api/moz_external_vr.h b/gfx/vr/external_api/moz_external_vr.h
-index 1777c57b9b46..7c69aa044cce 100644
+index 1777c57b9b..7c69aa044c 100644
 --- a/gfx/vr/external_api/moz_external_vr.h
 +++ b/gfx/vr/external_api/moz_external_vr.h
 @@ -48,7 +48,7 @@ namespace gfx {
@@ -210,7 +195,7 @@ index 1777c57b9b46..7c69aa044cce 100644
    float nativeFramebufferScaleFactor;
    bool suppressFrames;
 diff --git a/gfx/vr/gfxVR.cpp b/gfx/vr/gfxVR.cpp
-index ed1c6d32d6f6..b2a385fec92e 100644
+index ed1c6d32d6..b2a385fec9 100644
 --- a/gfx/vr/gfxVR.cpp
 +++ b/gfx/vr/gfxVR.cpp
 @@ -72,9 +72,17 @@ const IntSize VRDisplayInfo::SuggestedEyeResolution() const {
@@ -235,7 +220,7 @@ index ed1c6d32d6f6..b2a385fec92e 100644
  
  const Size VRDisplayInfo::GetStageSize() const {
 diff --git a/gfx/vr/gfxVR.h b/gfx/vr/gfxVR.h
-index d4d772b6a26e..f9c130c16924 100644
+index d4d772b6a2..f9c130c169 100644
 --- a/gfx/vr/gfxVR.h
 +++ b/gfx/vr/gfxVR.h
 @@ -65,6 +65,7 @@ struct VRDisplayInfo {
@@ -247,5 +232,5 @@ index d4d772b6a26e..f9c130c16924 100644
      return mDisplayState.eyeFOV[whichEye];
    }
 -- 
-2.35.1
+2.40.1
 

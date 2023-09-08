@@ -1,26 +1,8 @@
-From 13155ba80b0afb3b6dd8e7ed8dcbede2decde8bb Mon Sep 17 00:00:00 2001
-From: Sergio Villar Senin <svillar@igalia.com>
-Date: Wed, 10 May 2023 19:23:53 +0200
-Subject: [PATCH 13/16] [webxr] Support Pico4 controllers
-
-Add support for the pico4 (Pico 4) input profile. As specified
-in the WebXR input profile[1] we're setting pico-4 and
-generic-trigger-squeeze-thumbstick as fallback profiles.
-
-Update the externalVR VRControllerType enum as well.
-
-[1] https://github.com/immersive-web/webxr-input-profiles/blob/main/packages/registry/profiles/pico/pico-4.json
----
- dom/vr/XRInputSource.cpp              | 6 ++++++
- gfx/vr/VRDisplayClient.cpp            | 1 +
- gfx/vr/external_api/moz_external_vr.h | 1 +
- 3 files changed, 8 insertions(+)
-
 diff --git a/dom/vr/XRInputSource.cpp b/dom/vr/XRInputSource.cpp
-index da36839d624f..5b6afaf92857 100644
+index 8cf2849d1c..4bc66efbbe 100644
 --- a/dom/vr/XRInputSource.cpp
 +++ b/dom/vr/XRInputSource.cpp
-@@ -112,6 +112,12 @@ nsTArray<nsString> GetInputSourceProfile(gfx::VRControllerType aType) {
+@@ -110,6 +110,12 @@ nsTArray<nsString> GetInputSourceProfile(gfx::VRControllerType aType) {
        id.AssignLiteral("generic-trigger-squeeze-thumbstick");
        profile.AppendElement(id);
        break;
@@ -34,7 +16,7 @@ index da36839d624f..5b6afaf92857 100644
        NS_WARNING("Unsupported XR input source profile.\n");
        break;
 diff --git a/gfx/vr/VRDisplayClient.cpp b/gfx/vr/VRDisplayClient.cpp
-index 914fb05893c3..02629b85ae1b 100644
+index 914fb05893..02629b85ae 100644
 --- a/gfx/vr/VRDisplayClient.cpp
 +++ b/gfx/vr/VRDisplayClient.cpp
 @@ -419,6 +419,7 @@ void VRDisplayClient::GamepadMappingForWebVR(
@@ -46,7 +28,7 @@ index 914fb05893c3..02629b85ae1b 100644
            ShiftButtonBitForNewSlot(0, 3) | ShiftButtonBitForNewSlot(1, 0) |
            ShiftButtonBitForNewSlot(2, 1) | ShiftButtonBitForNewSlot(3, 4) |
 diff --git a/gfx/vr/external_api/moz_external_vr.h b/gfx/vr/external_api/moz_external_vr.h
-index 7c69aa044cce..91785ab3356c 100644
+index 7c69aa044c..91785ab335 100644
 --- a/gfx/vr/external_api/moz_external_vr.h
 +++ b/gfx/vr/external_api/moz_external_vr.h
 @@ -151,6 +151,7 @@ enum class VRControllerType : uint8_t {
@@ -58,5 +40,5 @@ index 7c69aa044cce..91785ab3356c 100644
  };
  
 -- 
-2.35.1
+2.40.1
 

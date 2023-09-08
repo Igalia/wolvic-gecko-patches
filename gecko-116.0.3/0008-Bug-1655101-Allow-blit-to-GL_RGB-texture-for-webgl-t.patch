@@ -1,28 +1,8 @@
-From 7e0ce5e7715153aff3250a7db45fbb5a0bc36fd2 Mon Sep 17 00:00:00 2001
-From: Jamie Nicol <jnicol@mozilla.com>
-Date: Wed, 18 Jan 2023 18:08:49 +0100
-Subject: [PATCH 09/16] Bug 1655101 - Allow blit to GL_RGB texture for webgl
- texture uploads. r?jgilbert
-
-On devices where GL_RGB is a color-renderable format, allow blitting
-to GL_RGB textures to implement texture upload. This allows us to stay
-on the fast-path when the source data is video and the target texture
-format is GL_RGB. In fact, on Android this makes it work at all, as
-the slow-path is not actually implemented.
----
- dom/canvas/ClientWebGLContext.cpp   |  3 ++-
- dom/canvas/TexUnpackBlob.cpp        | 15 ++++++++++-----
- dom/canvas/TexUnpackBlob.h          |  3 ++-
- dom/canvas/WebGLContextValidate.cpp |  2 ++
- dom/canvas/WebGLTypes.h             |  1 +
- gfx/gl/GLContext.h                  |  1 +
- 6 files changed, 18 insertions(+), 7 deletions(-)
-
 diff --git a/dom/canvas/ClientWebGLContext.cpp b/dom/canvas/ClientWebGLContext.cpp
-index 922872287fff..eca69a3ee271 100644
+index 9c04fd8d41..0addf11bcd 100644
 --- a/dom/canvas/ClientWebGLContext.cpp
 +++ b/dom/canvas/ClientWebGLContext.cpp
-@@ -4250,7 +4250,8 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
+@@ -4371,7 +4371,8 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
      const auto& contextInfo = mNotLost->info;
  
      const auto fallbackReason = [&]() -> Maybe<std::string> {
@@ -33,7 +13,7 @@ index 922872287fff..eca69a3ee271 100644
  
        const bool canUploadViaSd = contextInfo.uploadableSdTypes[sdType];
 diff --git a/dom/canvas/TexUnpackBlob.cpp b/dom/canvas/TexUnpackBlob.cpp
-index 73746cca5e64..94315324b037 100644
+index 73746cca5e..94315324b0 100644
 --- a/dom/canvas/TexUnpackBlob.cpp
 +++ b/dom/canvas/TexUnpackBlob.cpp
 @@ -660,7 +660,8 @@ bool TexUnpackImage::Validate(const WebGLContext* const webgl,
@@ -73,7 +53,7 @@ index 73746cca5e64..94315324b037 100644
      webgl->GeneratePerfWarning(
          "Failed to hit GPU-copy fast-path."
 diff --git a/dom/canvas/TexUnpackBlob.h b/dom/canvas/TexUnpackBlob.h
-index 8d4c472b9a5b..5317af83ebe0 100644
+index 8d4c472b9a..5317af83eb 100644
 --- a/dom/canvas/TexUnpackBlob.h
 +++ b/dom/canvas/TexUnpackBlob.h
 @@ -43,7 +43,8 @@ struct DriverUnpackInfo;
@@ -87,10 +67,10 @@ index 8d4c472b9a5b..5317af83ebe0 100644
  class TexUnpackBlob {
   public:
 diff --git a/dom/canvas/WebGLContextValidate.cpp b/dom/canvas/WebGLContextValidate.cpp
-index 9cb8b370be00..ac1e92fdd14a 100644
+index f01ed06a36..503bcfaafb 100644
 --- a/dom/canvas/WebGLContextValidate.cpp
 +++ b/dom/canvas/WebGLContextValidate.cpp
-@@ -238,6 +238,8 @@ static webgl::Limits MakeLimits(const WebGLContext& webgl) {
+@@ -241,6 +241,8 @@ static webgl::Limits MakeLimits(const WebGLContext& webgl) {
          gl::GLContext::KHR_texture_compression_astc_hdr);
    }
  
@@ -100,10 +80,10 @@ index 9cb8b370be00..ac1e92fdd14a 100644
        limits.supportedExtensions[WebGLExtensionID::WEBGL_draw_buffers]) {
      gl.GetUIntegerv(LOCAL_GL_MAX_DRAW_BUFFERS, &limits.maxColorDrawBuffers);
 diff --git a/dom/canvas/WebGLTypes.h b/dom/canvas/WebGLTypes.h
-index a70db31e18ce..f103c231066c 100644
+index cdf255ab44..384cd2abe2 100644
 --- a/dom/canvas/WebGLTypes.h
 +++ b/dom/canvas/WebGLTypes.h
-@@ -625,6 +625,7 @@ struct Limits final {
+@@ -651,6 +651,7 @@ struct Limits final {
  
    // Exts
    bool astcHdr = false;
@@ -112,10 +92,10 @@ index a70db31e18ce..f103c231066c 100644
    uint64_t queryCounterBitsTimeElapsed = 0;
    uint64_t queryCounterBitsTimestamp = 0;
 diff --git a/gfx/gl/GLContext.h b/gfx/gl/GLContext.h
-index 04d142bacbec..cf32513dd883 100644
+index 2e22689b45..5fb761d734 100644
 --- a/gfx/gl/GLContext.h
 +++ b/gfx/gl/GLContext.h
-@@ -292,6 +292,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
+@@ -282,6 +282,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
    }
  
    bool HasPBOState() const { return (!IsGLES() || Version() >= 300); }
@@ -124,5 +104,5 @@ index 04d142bacbec..cf32513dd883 100644
    /**
     * If this context is double-buffered, returns TRUE.
 -- 
-2.35.1
+2.40.1
 

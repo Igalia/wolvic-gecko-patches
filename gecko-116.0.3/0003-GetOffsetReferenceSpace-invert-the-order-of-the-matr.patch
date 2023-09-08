@@ -1,15 +1,5 @@
-From 69f4dbb5224fbc165db8dc2925d2fb129ab99e72 Mon Sep 17 00:00:00 2001
-From: Sergio <svillar@igalia.com>
-Date: Tue, 8 Feb 2022 19:41:45 +0100
-Subject: [PATCH 04/16] GetOffsetReferenceSpace: invert the order of the matrix
- multiplication (#1)
-
----
- dom/vr/XRReferenceSpace.cpp | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
 diff --git a/dom/vr/XRReferenceSpace.cpp b/dom/vr/XRReferenceSpace.cpp
-index c442a916c643..0edeb36541ce 100644
+index c442a916c6..0edeb36541 100644
 --- a/dom/vr/XRReferenceSpace.cpp
 +++ b/dom/vr/XRReferenceSpace.cpp
 @@ -24,7 +24,7 @@ already_AddRefed<XRReferenceSpace> XRReferenceSpace::GetOffsetReferenceSpace(
@@ -22,5 +12,5 @@ index c442a916c643..0edeb36541ce 100644
    return offsetReferenceSpace.forget();
  }
 -- 
-2.35.1
+2.40.1
 

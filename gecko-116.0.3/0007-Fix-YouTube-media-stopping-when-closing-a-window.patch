@@ -1,21 +1,8 @@
-From 7ccd4fc6b63cad8e554139c9a375c22e2142e942 Mon Sep 17 00:00:00 2001
-From: Sergio Villar Senin <svillar@igalia.com>
-Date: Mon, 6 Jun 2022 16:52:52 +0200
-Subject: [PATCH 08/16] Fix YouTube media stopping when closing a window
-
-Whenever a YouTube video is played, and you open and close a new window,
-media playback stops. Opening a new window automagically resumes it.
-We can workaround this issue by not executing a very suspicious bunch
-of code in Gecko which apparently is really fragile.
----
- dom/base/nsGlobalWindowOuter.cpp | 2 ++
- 1 file changed, 2 insertions(+)
-
 diff --git a/dom/base/nsGlobalWindowOuter.cpp b/dom/base/nsGlobalWindowOuter.cpp
-index a4ec928c4d0d..c4f2f3dc3c66 100644
+index 9893fb0ed1..d6398dbd25 100644
 --- a/dom/base/nsGlobalWindowOuter.cpp
 +++ b/dom/base/nsGlobalWindowOuter.cpp
-@@ -6175,6 +6175,7 @@ void nsGlobalWindowOuter::FinalClose() {
+@@ -6049,6 +6049,7 @@ void nsGlobalWindowOuter::FinalClose() {
    // complete _two_ round-trips to the event loop before the call to
    // ReallyCloseWindow. This allows setTimeout handlers that are set after
    // FinalClose() is called to run before the window is torn down.
@@ -23,7 +10,7 @@ index a4ec928c4d0d..c4f2f3dc3c66 100644
    nsCOMPtr<nsPIDOMWindowInner> entryWindow =
        do_QueryInterface(GetEntryGlobal());
    bool indirect = entryWindow && entryWindow->GetOuterWindow() == this;
-@@ -6183,6 +6184,7 @@ void nsGlobalWindowOuter::FinalClose() {
+@@ -6057,6 +6058,7 @@ void nsGlobalWindowOuter::FinalClose() {
    } else {
      mHavePendingClose = true;
    }
@@ -32,5 +19,5 @@ index a4ec928c4d0d..c4f2f3dc3c66 100644
  
  void nsGlobalWindowOuter::ReallyCloseWindow() {
 -- 
-2.35.1
+2.40.1
 

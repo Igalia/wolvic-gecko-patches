@@ -1,23 +1,5 @@
-From a7dfba4acc6081c6ca69cd0a0a70adb177161035 Mon Sep 17 00:00:00 2001
-From: Imanol Fernandez <ifernandez@igalia.com>
-Date: Fri, 28 Jan 2022 11:02:49 +0100
-Subject: [PATCH 02/16] Use transform matrix for several WebXR pose
- calculations
-
----
- dom/vr/XRBoundedReferenceSpace.cpp  | 18 +++++-------------
- dom/vr/XRFrame.cpp                  | 15 +++------------
- dom/vr/XRNativeOriginLocal.cpp      | 15 +--------------
- dom/vr/XRNativeOriginLocalFloor.cpp |  4 ++--
- dom/vr/XRReferenceSpace.cpp         | 18 +++++-------------
- dom/vr/XRRigidTransform.cpp         |  4 ++++
- dom/vr/XRRigidTransform.h           |  1 +
- dom/vr/XRSpace.cpp                  | 29 ++++++++++-------------------
- dom/vr/XRSpace.h                    |  6 ++----
- 9 files changed, 33 insertions(+), 77 deletions(-)
-
 diff --git a/dom/vr/XRBoundedReferenceSpace.cpp b/dom/vr/XRBoundedReferenceSpace.cpp
-index 8d6eb25fdf47..200a2539f86e 100644
+index 8d6eb25fdf..200a2539f8 100644
 --- a/dom/vr/XRBoundedReferenceSpace.cpp
 +++ b/dom/vr/XRBoundedReferenceSpace.cpp
 @@ -50,22 +50,14 @@ void XRBoundedReferenceSpace::GetBoundsGeometry(
@@ -49,10 +31,10 @@ index 8d6eb25fdf47..200a2539f86e 100644
    return offsetReferenceSpace.forget();
  }
 diff --git a/dom/vr/XRFrame.cpp b/dom/vr/XRFrame.cpp
-index 9fbd9fc594cc..95f3028e17c0 100644
+index 639bb2b019..1561d36eb0 100644
 --- a/dom/vr/XRFrame.cpp
 +++ b/dom/vr/XRFrame.cpp
-@@ -83,12 +83,7 @@ already_AddRefed<XRViewerPose> XRFrame::GetViewerPose(
+@@ -81,12 +81,7 @@ already_AddRefed<XRViewerPose> XRFrame::GetViewerPose(
      headTransform.SetRotationFromQuaternion(viewerOrientation);
      headTransform.PostTranslate(viewerPosition);
  
@@ -66,7 +48,7 @@ index 9fbd9fc594cc..95f3028e17c0 100644
  
      viewerPose = mSession->PooledViewerPose(headTransform, emulatedPosition);
  
-@@ -158,13 +153,9 @@ already_AddRefed<XRPose> XRFrame::GetPose(const XRSpace& aSpace,
+@@ -156,13 +151,9 @@ already_AddRefed<XRPose> XRFrame::GetPose(const XRSpace& aSpace,
    // TODO (Bug 1616393) - Check if poses must be limited:
    // https://immersive-web.github.io/webxr/#poses-must-be-limited
  
@@ -83,7 +65,7 @@ index 9fbd9fc594cc..95f3028e17c0 100644
    RefPtr<XRRigidTransform> transform = new XRRigidTransform(mParent, matrix);
    RefPtr<XRPose> pose = new XRPose(mParent, transform, emulatedPosition);
 diff --git a/dom/vr/XRNativeOriginLocal.cpp b/dom/vr/XRNativeOriginLocal.cpp
-index fd4590cf9ec8..32f0f3f2ecfd 100644
+index fd4590cf9e..32f0f3f2ec 100644
 --- a/dom/vr/XRNativeOriginLocal.cpp
 +++ b/dom/vr/XRNativeOriginLocal.cpp
 @@ -15,20 +15,7 @@ XRNativeOriginLocal::XRNativeOriginLocal(gfx::VRDisplayClient* aDisplay)
@@ -109,7 +91,7 @@ index fd4590cf9ec8..32f0f3f2ecfd 100644
  
  }  // namespace mozilla::dom
 diff --git a/dom/vr/XRNativeOriginLocalFloor.cpp b/dom/vr/XRNativeOriginLocalFloor.cpp
-index 2cd146d925b2..a60a714b0a65 100644
+index 2cd146d925..a60a714b0a 100644
 --- a/dom/vr/XRNativeOriginLocalFloor.cpp
 +++ b/dom/vr/XRNativeOriginLocalFloor.cpp
 @@ -29,9 +29,9 @@ gfx::PointDouble3D XRNativeOriginLocalFloor::GetPosition() {
@@ -125,7 +107,7 @@ index 2cd146d925b2..a60a714b0a65 100644
      mStandingTransform = standing;
    }
 diff --git a/dom/vr/XRReferenceSpace.cpp b/dom/vr/XRReferenceSpace.cpp
-index 9ed73003cd7a..c442a916c643 100644
+index 9ed73003cd..c442a916c6 100644
 --- a/dom/vr/XRReferenceSpace.cpp
 +++ b/dom/vr/XRReferenceSpace.cpp
 @@ -17,22 +17,14 @@ XRReferenceSpace::XRReferenceSpace(nsIGlobalObject* aParent,
@@ -157,10 +139,10 @@ index 9ed73003cd7a..c442a916c643 100644
    return offsetReferenceSpace.forget();
  }
 diff --git a/dom/vr/XRRigidTransform.cpp b/dom/vr/XRRigidTransform.cpp
-index ce6ee583dff3..7663cea943dd 100644
+index d29937c56a..c900587f4f 100644
 --- a/dom/vr/XRRigidTransform.cpp
 +++ b/dom/vr/XRRigidTransform.cpp
-@@ -98,6 +98,10 @@ gfx::PointDouble3D XRRigidTransform::RawPosition() const {
+@@ -95,6 +95,10 @@ gfx::PointDouble3D XRRigidTransform::RawPosition() const {
    return mRawPosition;
  }
  
@@ -172,7 +154,7 @@ index ce6ee583dff3..7663cea943dd 100644
                                const gfx::QuaternionDouble& aOrientation) {
    mNeedsUpdate = true;
 diff --git a/dom/vr/XRRigidTransform.h b/dom/vr/XRRigidTransform.h
-index defeebe13d42..878f4e8b5e37 100644
+index defeebe13d..878f4e8b5e 100644
 --- a/dom/vr/XRRigidTransform.h
 +++ b/dom/vr/XRRigidTransform.h
 @@ -32,6 +32,7 @@ class XRRigidTransform final : public nsWrapperCache {
@@ -184,7 +166,7 @@ index defeebe13d42..878f4e8b5e37 100644
                const gfx::QuaternionDouble& aOrientation);
    void Update(const gfx::Matrix4x4Double& aTransform);
 diff --git a/dom/vr/XRSpace.cpp b/dom/vr/XRSpace.cpp
-index 1f6449e8704a..e74d01be756f 100644
+index 1f6449e870..e74d01be75 100644
 --- a/dom/vr/XRSpace.cpp
 +++ b/dom/vr/XRSpace.cpp
 @@ -28,9 +28,7 @@ XRSpace::XRSpace(nsIGlobalObject* aParent, XRSession* aSession,
@@ -234,7 +216,7 @@ index 1f6449e8704a..e74d01be756f 100644
  
  bool XRSpace::IsPositionEmulated() const {
 diff --git a/dom/vr/XRSpace.h b/dom/vr/XRSpace.h
-index a87480857e57..ff1efc2a0129 100644
+index a87480857e..ff1efc2a01 100644
 --- a/dom/vr/XRSpace.h
 +++ b/dom/vr/XRSpace.h
 @@ -34,8 +34,7 @@ class XRSpace : public DOMEventTargetHelper {
@@ -258,5 +240,5 @@ index a87480857e57..ff1efc2a0129 100644
  
  }  // namespace mozilla::dom
 -- 
-2.35.1
+2.40.1
 

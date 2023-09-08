@@ -1,18 +1,5 @@
-From e358fc707c0e29c17207484a85027c44c8628a94 Mon Sep 17 00:00:00 2001
-From: Felipe Erias <felipeerias@igalia.com>
-Date: Thu, 9 Feb 2023 23:13:02 +0900
-Subject: [PATCH 11/16] Prevent crashes if permissions are missing
-
-This PR prevents crashes if the permissions WAKE_LOCK and FOREGROUND_SERVICE
-have not been granted to the app that is embedding GeckoView.
----
- .../google/android/exoplayer2/WakeLockManager.java | 11 +++++++++--
- .../com/google/android/exoplayer2/util/Util.java   | 14 ++++++++++----
- .../main/java/org/mozilla/gecko/GeckoAppShell.java |  7 +++++++
- 3 files changed, 26 insertions(+), 6 deletions(-)
-
 diff --git a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java
-index 368eb8aa0d85..90bfaffba6f7 100644
+index 368eb8aa0d..90bfaffba6 100644
 --- a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java
 +++ b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java
 @@ -15,10 +15,13 @@
@@ -45,7 +32,7 @@ index 368eb8aa0d85..90bfaffba6f7 100644
  
    /**
 diff --git a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java
-index 4d7d8014dd56..456d1d04d68a 100644
+index 4d7d8014dd..456d1d04d6 100644
 --- a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java
 +++ b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java
 @@ -168,10 +168,16 @@ public final class Util {
@@ -70,7 +57,7 @@ index 4d7d8014dd56..456d1d04d68a 100644
    }
  
 diff --git a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java
-index aae1f63c5f9c..c5c00dcb2eb0 100644
+index e55e7ba8d3..3cc5fcec83 100644
 --- a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java
 +++ b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java
 @@ -5,6 +5,7 @@
@@ -81,7 +68,7 @@ index aae1f63c5f9c..c5c00dcb2eb0 100644
  import android.annotation.SuppressLint;
  import android.annotation.TargetApi;
  import android.app.ActivityManager;
-@@ -43,6 +44,7 @@ import android.os.Bundle;
+@@ -44,6 +45,7 @@ import android.os.Debug;
  import android.os.LocaleList;
  import android.os.Looper;
  import android.os.PowerManager;
@@ -89,7 +76,7 @@ index aae1f63c5f9c..c5c00dcb2eb0 100644
  import android.os.Vibrator;
  import android.provider.Settings;
  import android.text.TextUtils;
-@@ -549,6 +551,11 @@ public class GeckoAppShell {
+@@ -561,6 +563,11 @@ public class GeckoAppShell {
    @SuppressLint("Wakelock") // We keep the wake lock independent from the function
    // scope, so we need to suppress the linter warning.
    private static void setWakeLockState(final String lock, final int state) {
@@ -102,5 +89,5 @@ index aae1f63c5f9c..c5c00dcb2eb0 100644
        sWakeLocks = new SimpleArrayMap<>(WAKE_LOCKS_COUNT);
      }
 -- 
-2.35.1
+2.40.1
 
