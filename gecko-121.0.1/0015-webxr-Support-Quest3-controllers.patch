@@ -1,0 +1,47 @@
+diff --git a/dom/vr/XRInputSource.cpp b/dom/vr/XRInputSource.cpp
+index 4bc66efbbe..16ff32a40f 100644
+--- a/dom/vr/XRInputSource.cpp
++++ b/dom/vr/XRInputSource.cpp
+@@ -116,6 +116,16 @@ nsTArray<nsString> GetInputSourceProfile(gfx::VRControllerType aType) {
+       id.AssignLiteral("generic-trigger-squeeze-thumbstick");
+       profile.AppendElement(id);
+       break;
++    case gfx::VRControllerType::MetaQuest3:
++      id.AssignLiteral("meta-quest-touch-plus");
++      profile.AppendElement(id);
++      id.AssignLiteral("oculus-touch-v3");
++      profile.AppendElement(id);
++      id.AssignLiteral("oculus-touch");
++      profile.AppendElement(id);
++      id.AssignLiteral("generic-trigger-squeeze-thumbstick");
++      profile.AppendElement(id);
++      break;
+     default:
+       NS_WARNING("Unsupported XR input source profile.\n");
+       break;
+diff --git a/gfx/vr/VRDisplayClient.cpp b/gfx/vr/VRDisplayClient.cpp
+index 02629b85ae..0a949cb913 100644
+--- a/gfx/vr/VRDisplayClient.cpp
++++ b/gfx/vr/VRDisplayClient.cpp
+@@ -337,7 +337,8 @@ void VRDisplayClient::GamepadMappingForWebVR(
+       aControllerState.numAxes = 2;
+       break;
+     case VRControllerType::OculusTouch2:
+-    case VRControllerType::OculusTouch3: {
++    case VRControllerType::OculusTouch3:
++    case VRControllerType::MetaQuest3: {
+       aControllerState.buttonPressed =
+           ShiftButtonBitForNewSlot(0, 3) | ShiftButtonBitForNewSlot(1, 0) |
+           ShiftButtonBitForNewSlot(2, 1) | ShiftButtonBitForNewSlot(3, 4) |
+diff --git a/gfx/vr/external_api/moz_external_vr.h b/gfx/vr/external_api/moz_external_vr.h
+index 91785ab335..031caa2a51 100644
+--- a/gfx/vr/external_api/moz_external_vr.h
++++ b/gfx/vr/external_api/moz_external_vr.h
+@@ -152,6 +152,7 @@ enum class VRControllerType : uint8_t {
+   PicoG2,
+   PicoNeo2,
+   Pico4,
++  MetaQuest3,
+   _end
+ };
+ 
