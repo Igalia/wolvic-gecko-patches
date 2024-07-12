@@ -1,0 +1,23 @@
+diff --git a/gfx/vr/VRManager.cpp b/gfx/vr/VRManager.cpp
+index 2157439b92b1..e70a04fc2b55 100644
+--- a/gfx/vr/VRManager.cpp
++++ b/gfx/vr/VRManager.cpp
+@@ -567,6 +567,15 @@ void VRManager::DetectRuntimes() {
+     // after installing or removing an XR device
+     // runtime.
+     DispatchRuntimeCapabilitiesUpdate();
++    // FIXME: this should not be done here. The device enumeration is normally triggered
++    // by the XRSystem once it gets the permission to start an XRSession. However we have
++    // noticed that this does not work in some cases, like the DelightVR player used to
++    // play immersive videos in tons of sites. WebXR applications issue permission requests
++    // as the webpage is loaded, meaning that by the time the user clicks on EnterVR-like
++    // button the devices are already enumerated. However in the case of DelightVR that only
++    // happens when the user already clicks on play. For some unknown reason, that's too late,
++    // probably the WebGL context is not properly already assigned to the newly enumerated device.
++    EnumerateDevices();
+     return;
+   }
+   mRuntimeDetectionRequested = true;
+-- 
+2.35.1
+
