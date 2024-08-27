@@ -1,0 +1,92 @@
+--- a/gfx/vr/external_api/moz_external_vr.h
++++ b/gfx/vr/external_api/moz_external_vr.h
+@@ -48,7 +48,7 @@
+ // running at the same time? Or...what if we have multiple
+ // release builds running on same machine? (Bug 1563232)
+ #define SHMEM_VERSION "0.0.11"
+-static const int32_t kVRExternalVersion = 19;
++static const int32_t kVRExternalVersion = 20;
+ 
+ // We assign VR presentations to groups with a bitmask.
+ // Currently, we will only display either content or chrome.
+@@ -68,6 +68,7 @@
+ static const int kVRControllerMaxAxis = 16;
+ static const int kVRLayerMaxCount = 8;
+ static const int kVRHapticsMaxCount = 32;
++static const int kVRBlendModesMaxLen = 3;
+ 
+ #if defined(__ANDROID__)
+ typedef uint64_t VRLayerTextureHandle;
+@@ -162,7 +163,9 @@
+ 
+ enum class GamepadMappingType : uint8_t { _empty, Standard, XRStandard };
+ 
+-enum class VRDisplayBlendMode : uint8_t { Opaque, Additive, AlphaBlend };
++enum class VRDisplayBlendMode : uint8_t { _empty, Opaque, Additive, AlphaBlend };
++
++enum class ImmersiveXRSessionType : uint8_t { VR, AR };
+ 
+ enum class VRDisplayCapabilityFlags : uint16_t {
+   Cap_None = 0,
+@@ -346,7 +349,7 @@
+   //                             ('B'<<8) + 'A').
+   uint64_t eightCC;
+   VRDisplayCapabilityFlags capabilityFlags;
+-  VRDisplayBlendMode blendMode;
++  VRDisplayBlendMode blendModes[kVRBlendModesMaxLen];
+   VRFieldOfView eyeFOV[VRDisplayState::NumEyes];
+   float eyeTransform[VRDisplayState::NumEyes][16];
+   IntSize_POD eyeResolution;
+@@ -526,6 +529,8 @@
+   bool navigationTransitionActive;
+   VRLayerState layerState[kVRLayerMaxCount];
+   VRHapticState hapticState[kVRHapticsMaxCount];
++  VRDisplayBlendMode blendMode;
++  ImmersiveXRSessionType sessionType;
+ 
+ #ifdef MOZILLA_INTERNAL_API
+   void Clear() { memset(this, 0, sizeof(VRBrowserState)); }
+--- a/gfx/vr/service/OculusSession.cpp
++++ b/gfx/vr/service/OculusSession.cpp
+@@ -1030,7 +1030,7 @@
+   state.capabilityFlags |= VRDisplayCapabilityFlags::Cap_MountDetection;
+   state.capabilityFlags |= VRDisplayCapabilityFlags::Cap_Present;
+   state.capabilityFlags |= VRDisplayCapabilityFlags::Cap_ImmersiveVR;
+-  state.blendMode = VRDisplayBlendMode::Opaque;
++  state.blendModes[0] = VRDisplayBlendMode::Opaque;
+   state.reportsDroppedFrames = true;
+ 
+   mFOVPort[VRDisplayState::Eye_Left] = desc.DefaultEyeFov[ovrEye_Left];
+--- a/gfx/vr/service/OpenVRSession.cpp
++++ b/gfx/vr/service/OpenVRSession.cpp
+@@ -713,7 +713,7 @@
+                                      Cap_StageParameters |
+                                  (int)
+                                      VRDisplayCapabilityFlags::Cap_ImmersiveVR);
+-  state.blendMode = VRDisplayBlendMode::Opaque;
++  state.blendModes[0] = VRDisplayBlendMode::Opaque;
+   state.reportsDroppedFrames = true;
+ 
+   ::vr::ETrackedPropertyError err;
+--- a/gfx/vr/service/OSVRSession.cpp
++++ b/gfx/vr/service/OSVRSession.cpp
+@@ -360,7 +360,7 @@
+                                  (int)VRDisplayCapabilityFlags::Cap_Present |
+                                  (int)
+                                      VRDisplayCapabilityFlags::Cap_ImmersiveVR);
+-  state.blendMode = VRDisplayBlendMode::Opaque;
++  state.blendModes[0] = VRDisplayBlendMode::Opaque;
+   state.reportsDroppedFrames = false;
+ 
+   // XXX OSVR display topology allows for more than one viewer
+--- a/dom/vr/VRServiceTest.cpp
++++ b/dom/vr/VRServiceTest.cpp
+@@ -77,7 +77,7 @@
+                           VRDisplayCapabilityFlags::Cap_StageParameters |
+                           VRDisplayCapabilityFlags::Cap_MountDetection |
+                           VRDisplayCapabilityFlags::Cap_ImmersiveVR;
+-  state.blendMode = VRDisplayBlendMode::Opaque;
++  state.blendModes[0] = VRDisplayBlendMode::Opaque;
+ 
+   // 1836 x 2040 resolution is arbitrary and can be overridden.
+   // This default resolution was chosen to be within range of a
