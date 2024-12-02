@@ -1,0 +1,13 @@
+diff --git a/gfx/gl/SharedSurfaceEGL.h b/gfx/gl/SharedSurfaceEGL.h
+index 569421f945..735ede59e9 100644
+--- a/gfx/gl/SharedSurfaceEGL.h
++++ b/gfx/gl/SharedSurfaceEGL.h
+@@ -115,6 +115,8 @@ class SurfaceFactory_SurfaceTexture final : public SurfaceFactory {
+  public:
+   explicit SurfaceFactory_SurfaceTexture(GLContext&);
+ 
++  bool SupportsCspaces() const override { return true; }
++
+   virtual UniquePtr<SharedSurface> CreateSharedImpl(
+       const SharedSurfaceDesc& desc) override {
+     return SharedSurface_SurfaceTexture::Create(desc);

@@ -1,0 +1,12 @@
+diff a/dom/vr/XRReferenceSpace.cpp b/dom/vr/XRReferenceSpace.cpp
+--- a/dom/vr/XRReferenceSpace.cpp
++++ b/dom/vr/XRReferenceSpace.cpp
+@@ -26,7 +26,7 @@
+   gfx::QuaternionDouble otherOrientation = aOriginOffset.RawOrientation();
+   // The resulting rotation is the two combined
+   offsetReferenceSpace->mOriginOffsetOrientation =
+-      mOriginOffsetOrientation * otherOrientation;
++      otherOrientation * mOriginOffset.RawOrientation();
+   // We first apply the rotation of aOriginOffset to
+   // mOriginOffsetPosition offset, then translate by the offset of
+   // aOriginOffset

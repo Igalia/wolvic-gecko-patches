@@ -1,0 +1,90 @@
+diff --git a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java
+index 368eb8a..90bfaff 100644
+--- a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java
++++ b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/WakeLockManager.java
+@@ -15,10 +15,13 @@
+  */
+ package org.mozilla.thirdparty.com.google.android.exoplayer2;
+ 
++import android.Manifest;
+ import android.annotation.SuppressLint;
+ import android.content.Context;
++import android.content.pm.PackageManager;
+ import android.os.PowerManager;
+ import android.os.PowerManager.WakeLock;
++import android.os.Process;
+ import androidx.annotation.Nullable;
+ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
+ 
+@@ -39,8 +42,12 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
+   private boolean stayAwake;
+ 
+   public WakeLockManager(Context context) {
+-    powerManager =
+-        (PowerManager) context.getApplicationContext().getSystemService(Context.POWER_SERVICE);
++    // Prevent a crash if the {@link android.Manifest.permission#WAKE_LOCK} permission has not been granted.
++    if (context.checkPermission(Manifest.permission.WAKE_LOCK, Process.myPid(), Process.myUid()) == PackageManager.PERMISSION_GRANTED) {
++      powerManager = (PowerManager) context.getApplicationContext().getSystemService(Context.POWER_SERVICE);
++    } else {
++      powerManager = null;
++    }
+   }
+ 
+   /**
+diff --git a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java
+index 4d7d801..456d1d0 100644
+--- a/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java
++++ b/mobile/android/exoplayer2/src/main/java/org/mozilla/thirdparty/com/google/android/exoplayer2/util/Util.java
+@@ -168,10 +168,16 @@ public final class Util {
+    */
+   @Nullable
+   public static ComponentName startForegroundService(Context context, Intent intent) {
+-    if (Util.SDK_INT >= 26) {
+-      return context.startForegroundService(intent);
+-    } else {
+-      return context.startService(intent);
++    // Prevent a crash if the {@link android.Manifest.permission#FOREGROUND_SERVICE} permission has not been granted.
++    try {
++      if (Util.SDK_INT >= 26) {
++        return context.startForegroundService(intent);
++      } else {
++        return context.startService(intent);
++      }
++    } catch (Exception e) {
++      Log.e(TAG, "Error when staring foreground service: " + e.getMessage());
++      return null;
+     }
+   }
+ 
+diff --git a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java
+index 38134ae..1d5bd73 100644
+--- a/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java
++++ b/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java
+@@ -5,6 +5,7 @@
+ 
+ package org.mozilla.gecko;
+ 
++import android.Manifest;
+ import android.annotation.SuppressLint;
+ import android.annotation.TargetApi;
+ import android.app.ActivityManager;
+@@ -44,6 +45,7 @@ import android.os.Debug;
+ import android.os.LocaleList;
+ import android.os.Looper;
+ import android.os.PowerManager;
++import android.os.Process;
+ import android.os.Vibrator;
+ import android.provider.Settings;
+ import android.util.Log;
+@@ -568,6 +570,11 @@ public class GeckoAppShell {
+   @SuppressLint("Wakelock") // We keep the wake lock independent from the function
+   // scope, so we need to suppress the linter warning.
+   private static void setWakeLockState(final String lock, final int state) {
++    // Prevent a crash if the {@link android.Manifest.permission#WAKE_LOCK} permission has not been granted.
++    if (getApplicationContext().checkPermission(Manifest.permission.WAKE_LOCK, Process.myPid(), Process.myUid()) != PackageManager.PERMISSION_GRANTED) {
++      return;
++    }
++
+     if (sWakeLocks == null) {
+       sWakeLocks = new SimpleArrayMap<>(WAKE_LOCKS_COUNT);
+     }
