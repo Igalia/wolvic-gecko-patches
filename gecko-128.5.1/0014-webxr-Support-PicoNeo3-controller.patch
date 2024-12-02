@@ -1,0 +1,49 @@
+diff --git a/dom/vr/XRInputSource.cpp b/dom/vr/XRInputSource.cpp
+index f3beef2..412206c 100644
+--- a/dom/vr/XRInputSource.cpp
++++ b/dom/vr/XRInputSource.cpp
+@@ -110,6 +110,12 @@ nsTArray<nsString> GetInputSourceProfile(gfx::VRControllerType aType) {
+       id.AssignLiteral("generic-trigger-squeeze-thumbstick");
+       profile.AppendElement(id);
+       break;
++    case gfx::VRControllerType::PicoNeo3:
++      id.AssignLiteral("pico-neo3");
++      profile.AppendElement(id);
++      id.AssignLiteral("generic-trigger-squeeze-thumbstick");
++      profile.AppendElement(id);
++      break;
+     case gfx::VRControllerType::Pico4:
+       id.AssignLiteral("pico-4");
+       profile.AppendElement(id);
+diff --git a/gfx/vr/VRDisplayClient.cpp b/gfx/vr/VRDisplayClient.cpp
+index 40cb3db..0caf762 100644
+--- a/gfx/vr/VRDisplayClient.cpp
++++ b/gfx/vr/VRDisplayClient.cpp
+@@ -418,6 +418,7 @@ void VRDisplayClient::GamepadMappingForWebVR(
+       aControllerState.numAxes = 2;
+       break;
+     case VRControllerType::PicoNeo2:
++    case VRControllerType::PicoNeo3:
+     case VRControllerType::Pico4:
+       aControllerState.buttonPressed =
+           ShiftButtonBitForNewSlot(0, 3) | ShiftButtonBitForNewSlot(1, 0) |
+diff --git a/gfx/vr/external_api/moz_external_vr.h b/gfx/vr/external_api/moz_external_vr.h
+index d8e731e..16aa45d 100644
+--- a/gfx/vr/external_api/moz_external_vr.h
++++ b/gfx/vr/external_api/moz_external_vr.h
+@@ -176,6 +176,7 @@ enum class VRControllerType : uint8_t {
+   PicoGaze,
+   PicoG2,
+   PicoNeo2,
++  PicoNeo3,
+   Pico4,
+   MetaQuest3,
+   MagicLeap2,
+@@ -208,6 +209,7 @@ inline constexpr bool IsEnumCase<gfx::VRControllerType>(
+     case gfx::VRControllerType::Pico4:
+     case gfx::VRControllerType::MetaQuest3:
+     case gfx::VRControllerType::MagicLeap2:
++    case gfx::VRControllerType::PicoNeo3:
+     case gfx::VRControllerType::_end:
+       return true;
+   }

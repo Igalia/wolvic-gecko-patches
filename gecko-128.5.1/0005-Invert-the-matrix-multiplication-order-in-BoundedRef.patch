@@ -1,0 +1,16 @@
+diff --git a/dom/vr/XRBoundedReferenceSpace.cpp b/dom/vr/XRBoundedReferenceSpace.cpp
+index 200a2539f8..d1a37fa58f 100644
+--- a/dom/vr/XRBoundedReferenceSpace.cpp
++++ b/dom/vr/XRBoundedReferenceSpace.cpp
+@@ -57,7 +57,7 @@ XRBoundedReferenceSpace::GetOffsetReferenceSpace(
+   // https://immersive-web.github.io/webxr/#dom-xrreferencespace-getoffsetreferencespace
+   // Set offsetSpace’s origin offset to the result of multiplying base’s origin offset
+   // by originOffset in the relevant realm of base.
+-  offsetReferenceSpace->mOriginOffset = mOriginOffset * aOffsetTransform.RawTransform();
++  offsetReferenceSpace->mOriginOffset = aOffsetTransform.RawTransform() * mOriginOffset;
+ 
+   return offsetReferenceSpace.forget();
+ }
+-- 
+2.40.1
+
