@@ -1,0 +1,53 @@
+From 93b1d3b9c9f7ef6b1e04fd55b939ab44f5d86cf9 Mon Sep 17 00:00:00 2001
+From: Sergio Villar Senin <svillar@igalia.com>
+Date: Tue, 11 Jun 2024 12:38:22 +0200
+Subject: [PATCH] build from sources
+
+---
+ .../android-components/components/support/base/build.gradle     | 2 +-
+ mobile/android/fenix/app/build.gradle                           | 2 +-
+ mobile/android/focus-android/app/build.gradle                   | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/mobile/android/android-components/components/support/base/build.gradle b/mobile/android/android-components/components/support/base/build.gradle
+index bc7bffa7e7..5a0412583e 100644
+--- a/mobile/android/android-components/components/support/base/build.gradle
++++ b/mobile/android/android-components/components/support/base/build.gradle
+@@ -51,7 +51,7 @@ android {
+             minifyEnabled false
+             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+ 
+-            buildConfigField("String", "VCS_HASH", "\"" + getVcsHash() + "\"")
++            //buildConfigField("String", "VCS_HASH", "\"" + getVcsHash() + "\"")
+         }
+     }
+ 
+diff --git a/mobile/android/fenix/app/build.gradle b/mobile/android/fenix/app/build.gradle
+index 196c4b6401..1d93cf79bb 100644
+--- a/mobile/android/fenix/app/build.gradle
++++ b/mobile/android/fenix/app/build.gradle
+@@ -104,7 +104,7 @@ android {
+ 
+         // Changing the build config can cause files that depend on BuildConfig.java to recompile
+         // so we only set the vcs hash in release builds to avoid possible recompilation in debug builds.
+-        buildConfigField "String", "VCS_HASH", "\"${Config.getVcsHash()}\""
++        //buildConfigField "String", "VCS_HASH", "\"${Config.getVcsHash()}\""
+ 
+         if (gradle.hasProperty("localProperties.autosignReleaseWithDebugKey")) {
+             signingConfig signingConfigs.debug
+diff --git a/mobile/android/focus-android/app/build.gradle b/mobile/android/focus-android/app/build.gradle
+index 6369e0df97..d975c8a12d 100644
+--- a/mobile/android/focus-android/app/build.gradle
++++ b/mobile/android/focus-android/app/build.gradle
+@@ -78,7 +78,7 @@ android {
+             minifyEnabled !project.hasProperty("disableOptimization")
+             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+             matchingFallbacks = ['release']
+-            buildConfigField "String", "VCS_HASH", "\"${Config.getVcsHash()}\""
++            //buildConfigField "String", "VCS_HASH", "\"${Config.getVcsHash()}\""
+ 
+             if (gradle.hasProperty("localProperties.autosignReleaseWithDebugKey")) {
+                 println ("All builds will be automatically signed with the debug key")
+-- 
+2.43.0
+
