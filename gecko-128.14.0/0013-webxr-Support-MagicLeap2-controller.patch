@@ -1,5 +1,5 @@
 diff --git a/dom/vr/XRInputSource.cpp b/dom/vr/XRInputSource.cpp
-index 16ff32a40f..f3beef26d9 100644
+index 16ff32a..f3beef2 100644
 --- a/dom/vr/XRInputSource.cpp
 +++ b/dom/vr/XRInputSource.cpp
 @@ -126,6 +126,12 @@ nsTArray<nsString> GetInputSourceProfile(gfx::VRControllerType aType) {
@@ -16,10 +16,10 @@ index 16ff32a40f..f3beef26d9 100644
        NS_WARNING("Unsupported XR input source profile.\n");
        break;
 diff --git a/gfx/vr/VRDisplayClient.cpp b/gfx/vr/VRDisplayClient.cpp
-index 0a949cb913..36a7b5bb71 100644
+index ee15acc..40cb3db 100644
 --- a/gfx/vr/VRDisplayClient.cpp
 +++ b/gfx/vr/VRDisplayClient.cpp
-@@ -436,6 +436,16 @@ void VRDisplayClient::GamepadMappingForWebVR(
+@@ -434,6 +434,16 @@ void VRDisplayClient::GamepadMappingForWebVR(
        aControllerState.numButtons = 6;
        aControllerState.numAxes = 2;
        break;
@@ -37,10 +37,10 @@ index 0a949cb913..36a7b5bb71 100644
        // Undefined controller types, we will keep its the same order.
        break;
 diff --git a/gfx/vr/external_api/moz_external_vr.h b/gfx/vr/external_api/moz_external_vr.h
-index 031caa2a51..1bb2cdd9f8 100644
+index 4cc4936..d8e731e 100644
 --- a/gfx/vr/external_api/moz_external_vr.h
 +++ b/gfx/vr/external_api/moz_external_vr.h
-@@ -153,6 +153,7 @@ enum class VRControllerType : uint8_t {
+@@ -178,6 +178,7 @@ enum class VRControllerType : uint8_t {
    PicoNeo2,
    Pico4,
    MetaQuest3,
@@ -48,3 +48,11 @@ index 031caa2a51..1bb2cdd9f8 100644
    _end
  };
  
+@@ -206,6 +207,7 @@ inline constexpr bool IsEnumCase<gfx::VRControllerType>(
+     case gfx::VRControllerType::PicoNeo2:
+     case gfx::VRControllerType::Pico4:
+     case gfx::VRControllerType::MetaQuest3:
++    case gfx::VRControllerType::MagicLeap2:
+     case gfx::VRControllerType::_end:
+       return true;
+   }

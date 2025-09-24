@@ -1,0 +1,15 @@
+diff --git a/gfx/vr/external_api/moz_external_vr.h b/gfx/vr/external_api/moz_external_vr.h
+index d56218c..37b42f4 100644
+--- a/gfx/vr/external_api/moz_external_vr.h
++++ b/gfx/vr/external_api/moz_external_vr.h
+@@ -48,8 +48,8 @@ namespace gfx {
+ // and mapped files if we have both release and nightlies
+ // running at the same time? Or...what if we have multiple
+ // release builds running on same machine? (Bug 1563232)
+-#define SHMEM_VERSION "0.0.12"
+-static const int32_t kVRExternalVersion = 20;
++#define SHMEM_VERSION "0.0.13"
++static const int32_t kVRExternalVersion = 21;
+ 
+ // We assign VR presentations to groups with a bitmask.
+ // Currently, we will only display either content or chrome.
