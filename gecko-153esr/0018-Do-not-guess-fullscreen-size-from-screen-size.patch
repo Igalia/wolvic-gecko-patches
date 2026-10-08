@@ -1,0 +1,45 @@
+From 950d2c9c9c8da524b10ade53c18d02222a26bb87 Mon Sep 17 00:00:00 2001
+From: Mono <81423605+monofunc@users.noreply.github.com>
+Date: Thu, 8 Oct 2026 17:54:32 +0400
+Subject: [PATCH] Do not guess fullscreen size from screen size
+
+On fullscreen enter content sets its viewport to screen size and waits for
+parent to send real size. In Wolvic fullscreen window is not screen size. If
+window size did not change, parent sends nothing and content stays cut.
+
+Do not set viewport size in advance on enter, so on exit there is nothing to
+restore too. Content keeps its size until parent sends new one.
+
+Fixes https://github.com/Igalia/wolvic/issues/604
+---
+ dom/base/nsDOMWindowUtils.cpp | 14 +++-----------
+ 1 file changed, 3 insertions(+), 11 deletions(-)
+
+diff --git a/dom/base/nsDOMWindowUtils.cpp b/dom/base/nsDOMWindowUtils.cpp
+index b35f948b94ed..2c9c0f7d480e 100644
+--- a/dom/base/nsDOMWindowUtils.cpp
++++ b/dom/base/nsDOMWindowUtils.cpp
+@@ -3535,17 +3535,9 @@ nsDOMWindowUtils::HandleFullscreenRequests(bool* aRetVal) {
+   nsCOMPtr<Document> doc = GetDocument();
+   NS_ENSURE_STATE(doc);
+ 
+-  // Notify the pres shell that we are starting fullscreen change, and
+-  // set the window dimensions in advance. Since the resize message
+-  // comes after the fullscreen change call, doing so could avoid an
+-  // extra resize reflow after this point.
+-  nsRect screenRect;
+-  if (nsPresContext* presContext = GetPresContext()) {
+-    screenRect = presContext->DeviceContext()->GetRect();
+-  }
+-  nsSize oldSize;
+-  PrepareForFullscreenChange(GetDocShell(), screenRect.Size(), &oldSize);
+-  OldWindowSize::Set(mWindow, oldSize);
++  // Fullscreen window size is decided by embedder and may differ from screen
++  // size, so do not guess it and wait for real size from parent.
++  PrepareForFullscreenChange(GetDocShell(), nsSize());
+ 
+   *aRetVal = Document::HandlePendingFullscreenRequests(doc);
+   return NS_OK;
+-- 
+2.54.0 (Apple Git-157)
+
