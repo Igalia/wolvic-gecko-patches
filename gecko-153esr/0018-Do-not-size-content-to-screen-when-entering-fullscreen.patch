@@ -1,0 +1,48 @@
+From 6860289304dc5e304ddc867900c6747f14119605 Mon Sep 17 00:00:00 2001
+From: Sergio Villar Senin <svillar@igalia.com>
+Date: Tue, 3 Nov 2026 13:47:30 +0100
+Subject: [PATCH] Do not size the content to the screen when entering DOM
+ fullscreen
+
+nsDOMWindowUtils::HandleFullscreenRequests() sets the size of the content
+viewer to the screen size right before entering fullscreen, expecting the
+widget to be resized to the screen too. That is not the case in Wolvic, where
+the widget is the surface the content is rendered to and keeps its size in
+fullscreen: the content is laid out at the screen size, which is larger than
+the surface, and the part that does not fit is cropped.
+
+The size is read once from the content process' screen, so changing the
+screen size after the fullscreen request does not fix it, and there is no
+ordering guarantee between a screen update and the request.
+
+Skip that step so the viewer keeps the size of the widget, which is what the
+content has to fill. Nothing needs to be restored on exit.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+---
+ dom/base/nsDOMWindowUtils.cpp | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/dom/base/nsDOMWindowUtils.cpp b/dom/base/nsDOMWindowUtils.cpp
+index 73ffc2e..fc79a18 100644
+--- a/dom/base/nsDOMWindowUtils.cpp
++++ b/dom/base/nsDOMWindowUtils.cpp
+@@ -3548,12 +3548,10 @@ nsDOMWindowUtils::HandleFullscreenRequests(bool* aRetVal) {
+   // set the window dimensions in advance. Since the resize message
+   // comes after the fullscreen change call, doing so could avoid an
+   // extra resize reflow after this point.
+-  nsRect screenRect;
+-  if (nsPresContext* presContext = GetPresContext()) {
+-    screenRect = presContext->DeviceContext()->GetRect();
+-  }
++  // Do not use the screen size here: in Wolvic the widget is the surface the
++  // content is rendered to and it keeps its size in fullscreen.
+   nsSize oldSize;
+-  PrepareForFullscreenChange(GetDocShell(), screenRect.Size(), &oldSize);
++  PrepareForFullscreenChange(GetDocShell(), nsSize(), &oldSize);
+   OldWindowSize::Set(mWindow, oldSize);
+ 
+   *aRetVal = Document::HandlePendingFullscreenRequests(doc);
+-- 
+2.53.0
+
